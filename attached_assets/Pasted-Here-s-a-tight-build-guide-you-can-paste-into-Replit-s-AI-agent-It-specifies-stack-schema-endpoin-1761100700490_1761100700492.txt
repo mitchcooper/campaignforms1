@@ -1,0 +1,411 @@
+Here’s a tight build guide you can paste into Replit’s AI agent. It specifies stack, schema, endpoints, and UI tasks for an MVP using SurveyJS without Carbone.
+
+# Project goal
+
+Build a multi-tenant internal app for vendor campaigns with a simple admin panel and a form builder using SurveyJS. Store campaigns, vendors, forms, and submissions. Admins create forms, send links, and view submissions.
+
+# Tech stack
+
+* Frontend: Next.js 14 (App Router), TypeScript, Tailwind.
+* Auth: next-auth with Email magic links (or GitHub/Google for speed).
+* DB/ORM: Prisma + SQLite (MVP) with easy switch to Postgres later.
+* Form builder: surveyjs packages:
+
+  * survey-core, survey-react-ui, survey-creator-react.
+* API: Next.js route handlers under /app/api.
+* Mail: Resend or nodemailer with SMTP for magic links.
+* Validation: zod.
+* State/data: React Query (TanStack Query).
+
+# High-level features
+
+1. Admin panel with user management and roles.
+2. Campaigns CRUD.
+3. Vendors CRUD, linked to campaigns.
+4. Form definitions (JSON) with SurveyJS Creator for admins.
+5. Form submissions linked to campaigns and vendors.
+6. Public vendor form route with tokenised access.
+7. Basic reporting views.
+
+# Folder structure
+
+```
+/app
+  /(public)
+    /form/[token]/page.tsx          // vendor form fill
+  /(admin)
+    /admin/page.tsx                 // dashboard
+    /admin/users/page.tsx
+    /admin/campaigns/page.tsx
+    /admin/vendors/page.tsx
+    /admin/forms/page.tsx
+    /admin/forms/[id]/builder/page.tsx
+  /api
+    /auth/[...nextauth]/route.ts
+    /campaigns/route.ts
+    /campaigns/[id]/route.ts
+    /vendors/route.ts
+    /vendors/[id]/route.ts
+    /forms/route.ts
+    /forms/[id]/route.ts
+    /submissions/route.ts
+    /submissions/[id]/route.ts
+    /links/issue/route.ts            // create vendor form links
+/prisma
+  schema.prisma
+/src
+  /components
+  /lib/auth.ts
+  /lib/db.ts
+  /lib/permissions.ts
+  /lib/email.ts
+  /hooks
+```
+
+# Prisma schema
+
+Use SQLite for MVP. Include role-based users, campaigns, vendors, forms, submissions, and signed links.
+
+```prisma
+// prisma/schema.prisma
+datasource db { provider = "sqlite"; url = "file:./dev.db" }
+generator client { provider = "prisma-client-js" }
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  role          Role     @default(USER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  campaigns     Campaign[] @relation("CampaignOwner")
+}
+
+enum Role { USER ADMIN }
+
+model Campaign {
+  id          String    @id @default(cuid())
+  name        String
+  status      String    @default("draft")
+  startDate   DateTime?
+  endDate     DateTime?
+  ownerId     String
+  owner       User      @relation("CampaignOwner", fields: [ownerId], references: [id])
+  vendors     Vendor[]
+  forms       Form[]    // form definitions scoped to campaign, optional
+  submissions Submission[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Vendor {
+  id          String    @id @default(cuid())
+  campaignId  String
+  campaign    Campaign  @relation(fields: [campaignId], references: [id])
+  name        String
+  email       String?
+  phone       String?
+  meta        Json?     // extra fields
+  submissions Submission[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Form {
+  id          String    @id @default(cuid())
+  campaignId  String?
+  campaign    Campaign? @relation(fields: [campaignId], references: [id])
+  title       String
+  description String?
+  json        Json      // SurveyJS schema
+  version     Int       @default(1)
+  isActive    Boolean   @default(true)
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Submission {
+  id          String    @id @default(cuid())
+  formId      String
+  form        Form      @relation(fields: [formId], references: [id])
+  campaignId  String
+  campaign    Campaign  @relation(fields: [campaignId], references: [id])
+  vendorId    String?
+  vendor      Vendor?   @relation(fields: [vendorId], references: [id])
+  data        Json      // SurveyJS result JSON
+  status      String    @default("submitted")
+  createdAt   DateTime  @default(now())
+}
+
+model AccessLink {
+  id            String   @id @default(cuid())
+  token         String   @unique
+  vendorId      String
+  vendor        Vendor   @relation(fields: [vendorId], references: [id])
+  campaignId    String
+  campaign      Campaign @relation(fields: [campaignId], references: [id])
+  formId        String
+  form          Form     @relation(fields: [formId], references: [id])
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime @default(now())
+}
+```
+
+# Seed script
+
+Create one admin, one campaign, one vendor, one example form.
+
+```ts
+// scripts/seed.ts
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
+async function main() {
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@example.com" },
+    update: { role: "ADMIN" },
+    create: { email: "admin@example.com", name: "Admin", role: "ADMIN" },
+  });
+  const camp = await prisma.campaign.create({ data: { name: "Spring Auction Campaign", ownerId: admin.id }});
+  const vendor = await prisma.vendor.create({ data: { name: "Smith Family", campaignId: camp.id, email: "vendor@example.com" }});
+  await prisma.form.create({
+    data: {
+      title: "Vendor Details",
+      createdById: admin.id,
+      campaignId: camp.id,
+      json: {
+        title: "Vendor Details",
+        pages: [{ elements: [
+          { type: "text", name: "owner_name", title: "Owner name", isRequired: true },
+          { type: "text", name: "property_address", title: "Property address", isRequired: true },
+          { type: "text", name: "email", title: "Email", inputType: "email" }
+        ]}]
+      }
+    }
+  });
+}
+main().finally(()=>prisma.$disconnect());
+```
+
+# API contracts
+
+Use REST under /app/api. All admin routes require role=ADMIN. Vendor form routes accept token. Return JSON only.
+
+## Users
+
+* GET /api/users - list users [ADMIN]
+* POST /api/users - create user {email, name, role} [ADMIN]
+* PATCH /api/users/:id - update role/name [ADMIN]
+
+## Campaigns
+
+* GET /api/campaigns
+* POST /api/campaigns {name, startDate?, endDate?}
+* GET /api/campaigns/:id
+* PATCH /api/campaigns/:id
+* DELETE /api/campaigns/:id
+
+## Vendors
+
+* GET /api/vendors?campaignId=...
+* POST /api/vendors {campaignId, name, email?, phone?, meta?}
+* PATCH /api/vendors/:id
+* DELETE /api/vendors/:id
+
+## Forms
+
+* GET /api/forms?campaignId=...
+* POST /api/forms {title, description?, json, campaignId?}
+* GET /api/forms/:id
+* PATCH /api/forms/:id {json?, title?, description?, isActive?, version?}
+* POST /api/links/issue {vendorId, campaignId, formId, expiresInHours} -> {url}
+
+## Submissions
+
+* POST /api/submissions {formId, campaignId, vendorId?, data}
+* GET /api/submissions?campaignId=...&formId=...&vendorId=...
+
+## Public vendor fill
+
+* GET /form/[token] - validate AccessLink, load Form JSON and vendor prefills
+* POST /api/submissions with token header or body
+
+# Auth and roles
+
+* next-auth email provider for MVP.
+* Add middleware on /admin/** to check session and role.
+* Add helper:
+
+```ts
+// lib/permissions.ts
+export function requireAdmin(user?: { role?: string }) {
+  if (!user || user.role !== "ADMIN") throw new Error("Forbidden");
+}
+```
+
+# SurveyJS integration
+
+* Admin builder page uses survey-creator-react.
+* Store creator JSON in Form.json.
+* Vendor fill page uses survey-react-ui to render stored JSON.
+* Use onComplete to POST submission.
+
+Minimal admin builder example:
+
+```tsx
+// app/(admin)/admin/forms/[id]/builder/page.tsx
+"use client";
+import { SurveyCreatorComponent, SurveyCreator } from "survey-creator-react";
+import "survey-core/defaultV2.min.css";
+import "survey-creator-core/survey-creator-core.min.css";
+import { useEffect, useState } from "react";
+export default function Builder({ params }: { params: { id: string } }) {
+  const [creator, setCreator] = useState<SurveyCreator>();
+  useEffect(() => {
+    const c = new SurveyCreator({ showLogicTab: true });
+    // fetch existing JSON
+    fetch(`/api/forms/${params.id}`).then(r=>r.json()).then(f=>{
+      c.JSON = f.json;
+    });
+    c.saveSurveyFunc = async (saveNo, done) => {
+      await fetch(`/api/forms/${params.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ json: c.JSON })
+      });
+      done(saveNo, true);
+    };
+    setCreator(c);
+  }, [params.id]);
+  if (!creator) return null;
+  return <SurveyCreatorComponent creator={creator} />;
+}
+```
+
+Vendor fill example:
+
+```tsx
+// app/(public)/form/[token]/page.tsx
+"use client";
+import { Model } from "survey-core";
+import { Survey } from "survey-react-ui";
+import { useEffect, useState } from "react";
+
+export default function VendorForm({ params }: { params: { token: string } }) {
+  const [json, setJson] = useState<any>(null);
+  const [context, setContext] = useState<any>(null);
+
+  useEffect(() => {
+    fetch(`/api/links/resolve?token=${params.token}`).then(r=>r.json()).then(setContext);
+  }, [params.token]);
+
+  useEffect(() => {
+    if (!context) return;
+    setJson(context.formJson);
+  }, [context]);
+
+  if (!json) return null;
+
+  const survey = new Model(json);
+  // optional prefill
+  if (context?.prefill) Object.entries(context.prefill).forEach(([k,v]) => {
+    survey.setValue(k, v);
+  });
+
+  survey.onComplete.add(async (s) => {
+    await fetch("/api/submissions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        formId: context.formId,
+        campaignId: context.campaignId,
+        vendorId: context.vendorId,
+        data: s.data
+      })
+    });
+    window.location.href = "/thank-you";
+  });
+
+  return <Survey model={survey} />;
+}
+```
+
+Token resolve handler:
+
+```ts
+// app/api/links/resolve/route.ts
+import { NextResponse } from "next/server";
+import { prisma } from "@/src/lib/db";
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const token = searchParams.get("token") || "";
+  const link = await prisma.accessLink.findUnique({ where: { token } , include: { form: true, vendor: true, campaign: true }});
+  if (!link || link.expiresAt < new Date()) return NextResponse.json({ error: "Invalid" }, { status: 404 });
+  return NextResponse.json({
+    formId: link.formId,
+    campaignId: link.campaignId,
+    vendorId: link.vendorId,
+    formJson: link.form.json,
+    prefill: { owner_name: link.vendor.name, email: link.vendor.email }
+  });
+}
+```
+
+Link issuance:
+
+```ts
+// app/api/links/issue/route.ts
+import { NextResponse } from "next/server";
+import { prisma } from "@prisma/client";
+import { randomBytes } from "crypto";
+export async function POST(req: Request) {
+  const { vendorId, campaignId, formId, expiresInHours = 168 } = await req.json();
+  const token = randomBytes(24).toString("hex");
+  const expiresAt = new Date(Date.now() + expiresInHours*3600*1000);
+  const link = await prisma.accessLink.create({ data: { token, vendorId, campaignId, formId, expiresAt }});
+  const url = `${process.env.APP_BASE_URL}/form/${token}`;
+  return NextResponse.json({ url });
+}
+```
+
+# Admin UI tasks
+
+* Users page: list users, set role to ADMIN or USER.
+* Campaigns page: table with create, edit, archive. Filter by owner.
+* Vendors page: table with campaign filter. Create/edit vendor. Button: “Issue form link” -> calls /api/links/issue and displays URL.
+* Forms page: list forms, create new, edit in builder, toggle active. Column: campaign scope or global.
+* Submissions page: filter by campaign, vendor, form. Table shows createdAt and a small JSON preview.
+
+# Security notes
+
+* Protect all /admin routes via middleware and role check.
+* Validate IDs against current user’s access if you add multi-tenant later.
+* Tokens are single-use optional. For MVP, track usedAt if you want to lock after submit.
+* Rate-limit public endpoints.
+
+# Testing and acceptance
+
+* Can create a campaign, a vendor, and a form.
+* Can issue a link and submit a form as a vendor.
+* Submission appears in Submissions list, linked to the correct campaign and vendor.
+* Admin can edit form JSON and re-issue a link that renders the updated form.
+* Basic email delivery of link works with Resend or SMTP.
+
+# Commands
+
+```
+npm init -y
+npm i next@latest react react-dom typescript tailwindcss postcss autoprefixer @prisma/client prisma zod next-auth @tanstack/react-query survey-core survey-react-ui survey-creator-react resend
+npx prisma init
+npx prisma migrate dev --name init
+npm run dev
+```
+
+# Stretch (optional)
+
+* Add webhooks for “submission.created”.
+* Add per-campaign roles.
+* Add file uploads using SurveyJS file question + S3 compatible storage.
+
+Use this spec as the prompt. Ask the agent to scaffold the app, generate the Prisma models and route handlers, then stand up the admin pages and vendor form flow.
