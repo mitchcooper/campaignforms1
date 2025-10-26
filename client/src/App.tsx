@@ -7,11 +7,13 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import Dashboard from "@/pages/dashboard";
 import Campaigns from "@/pages/campaigns";
+import CampaignManage from "@/pages/campaign-manage";
 import Vendors from "@/pages/vendors";
 import Forms from "@/pages/forms";
 import FormBuilder from "@/pages/form-builder";
 import Submissions from "@/pages/submissions";
 import VendorForm from "@/pages/vendor-form";
+import VendorPortal from "@/pages/vendor-portal";
 import NotFound from "@/pages/not-found";
 
 function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -40,8 +42,9 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
 function Router() {
   return (
     <Switch>
-      {/* Public vendor form route */}
+      {/* Public routes */}
       <Route path="/form/:token" component={VendorForm} />
+      <Route path="/portal/:vendorId" component={VendorPortal} />
       
       {/* Admin routes with sidebar */}
       <Route path="/">
@@ -52,6 +55,11 @@ function Router() {
       <Route path="/campaigns">
         <AdminLayout>
           <Campaigns />
+        </AdminLayout>
+      </Route>
+      <Route path="/campaigns/:id/manage">
+        <AdminLayout>
+          <CampaignManage />
         </AdminLayout>
       </Route>
       <Route path="/vendors">

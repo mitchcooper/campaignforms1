@@ -18,7 +18,7 @@
 
   --foreground: 210 100% 11%;
 
-  --border: 0 0% 90%;
+  --border: 0 0% 90%; /* Light border #E6E6E6 */
 
   --card: 0 0% 98%;
 
@@ -48,7 +48,7 @@
 
   --popover-border: 0 0% 86%;
 
-  --primary: 210 100% 11%;
+  --primary: 210 100% 11%; /* Navy #001F3A */
 
   --primary-foreground: 0 0% 100%;
 
@@ -56,11 +56,11 @@
 
   --secondary-foreground: 210 100% 11%;
 
-  --muted: 210 5% 90%;
+  --muted: 0 0% 95%; /* Light grey #F2F2F2 */
 
-  --muted-foreground: 210 100% 11%;
+  --muted-foreground: 0 0% 40%; /* Dark grey #666666 */
 
-  --accent: 210 8% 88%;
+  --accent: 0 0% 80%; /* Mid grey #CCCCCC */
 
   --accent-foreground: 210 100% 11%;
 
@@ -68,8 +68,8 @@
 
   --destructive-foreground: 0 0% 100%;
 
-  --input: 0 0% 80%;
-  --ring: 195 100% 47%;
+  --input: 0 0% 90%; /* Light border #E6E6E6 */
+  --ring: 195 100% 47%; /* Cyan #00AEEF */
   --chart-1: 210 100% 11%;
   --chart-2: 195 100% 47%;
   --chart-3: 142 71% 35%;
@@ -334,11 +334,12 @@
 
   /* Glassmorphism utility classes */
   .glass {
-    background: var(--glass-bg);
+    background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
+    border: 1px solid rgba(255, 255, 255, 0.7);
     box-shadow: var(--shadow-sm);
+    border-radius: 12px;
   }
 
   .glass-dark {

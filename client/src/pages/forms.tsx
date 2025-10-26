@@ -3,9 +3,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { DataTable, StatusBadge } from "@/components/data-table";
-import { Plus, Edit } from "lucide-react";
+import { Plus, Edit, Sparkles } from "lucide-react";
 import { Form as FormType } from "@shared/schema";
 import { FormDialog } from "@/components/form-dialog";
+import { FormWizardDialog } from "@/components/form-wizard-dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -15,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Forms() {
   const [, setLocation] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [editingForm, setEditingForm] = useState<FormType | null>(null);
   const { toast } = useToast();
 
@@ -32,6 +34,13 @@ export default function Forms() {
         description: "Form status has been updated successfully.",
       });
     },
+    onError: (error: any) => {
+      toast({
+        title: "Error updating form",
+        description: error?.response?.data?.error || "Failed to update form status",
+        variant: "destructive",
+      });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -41,6 +50,13 @@ export default function Forms() {
       toast({
         title: "Form deleted",
         description: "The form has been deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error deleting form",
+        description: error?.response?.data?.error || "Failed to delete form",
+        variant: "destructive",
       });
     },
   });
@@ -83,10 +99,20 @@ export default function Forms() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2" data-testid="text-forms-title">Forms</h1>
           <p className="text-muted-foreground">Design and manage global form templates available to all campaigns</p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} className="gap-2" data-testid="button-create-form">
-          <Plus className="h-4 w-4" />
-          Create Form
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setIsWizardOpen(true)}
+            className="gap-2 bg-[color:var(--hc-cyan)] text-white hover:opacity-90"
+            data-testid="button-ai-wizard"
+          >
+            <Sparkles className="h-4 w-4" />
+            AI Form Wizard
+          </Button>
+          <Button onClick={() => setIsDialogOpen(true)} className="gap-2" data-testid="button-create-form">
+            <Plus className="h-4 w-4" />
+            Create Form
+          </Button>
+        </div>
       </div>
 
       <DataTable
@@ -130,6 +156,11 @@ export default function Forms() {
         open={isDialogOpen}
         onClose={handleDialogClose}
         form={editingForm}
+      />
+
+      <FormWizardDialog
+        open={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
       />
     </div>
   );

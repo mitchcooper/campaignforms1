@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { insertCampaignSchema, type Campaign, type InsertCampaign } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +27,7 @@ export function CampaignDialog({ open, onClose, campaign }: CampaignDialogProps)
       status: "draft",
       startDate: null,
       endDate: null,
+      manualAddress: "",
     },
   });
 
@@ -38,6 +38,7 @@ export function CampaignDialog({ open, onClose, campaign }: CampaignDialogProps)
         status: campaign.status,
         startDate: campaign.startDate,
         endDate: campaign.endDate,
+        manualAddress: campaign.manualAddress || "",
       });
     } else {
       form.reset({
@@ -45,6 +46,7 @@ export function CampaignDialog({ open, onClose, campaign }: CampaignDialogProps)
         status: "draft",
         startDate: null,
         endDate: null,
+        manualAddress: "",
       });
     }
   }, [campaign, form]);
@@ -75,99 +77,48 @@ export function CampaignDialog({ open, onClose, campaign }: CampaignDialogProps)
   });
 
   const onSubmit = (data: InsertCampaign) => {
+    // Use the address as the campaign name
+    const campaignData = {
+      ...data,
+      name: data.manualAddress || "New Campaign",
+    };
+
     if (isEditing) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(campaignData);
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(campaignData);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-width-[500px]" data-testid="dialog-campaign">
+      <DialogContent className="sm:max-w-[500px]" data-testid="dialog-campaign">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Campaign" : "Create Campaign"}</DialogTitle>
           <DialogDescription>
-            {isEditing ? "Update your campaign details below." : "Enter campaign details to get started."}
+            {isEditing ? "Update the property address for this campaign." : "Enter the property address to create a new campaign."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="manualAddress"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Campaign Name</FormLabel>
+                  <FormLabel>Property Address</FormLabel>
                   <FormControl>
-                    <Input placeholder="Spring Auction Campaign" {...field} data-testid="input-campaign-name" />
+                    <Input
+                      placeholder="123 Main Street, Auckland"
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-campaign-address"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-campaign-status">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
-                        data-testid="input-campaign-start-date"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
-                        data-testid="input-campaign-end-date"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={onClose} data-testid="button-cancel">
                 Cancel

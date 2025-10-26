@@ -133,7 +133,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Design Form</p>
-                    <p className="text-xs text-muted-foreground">Build with SurveyJS</p>
+                    <p className="text-xs text-muted-foreground">Create form templates</p>
                   </div>
                 </div>
               </a>

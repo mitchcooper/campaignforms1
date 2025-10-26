@@ -1,196 +1,233 @@
-# Harcourts Cooper & Co Campaign Forms - Design Guidelines
+Below is a simplified, implementation-ready gloss for a modern React app using shadcn/ui. It keeps the Harcourts Cooper & Co flavour, adds light glassmorphism, and stays practical.
 
-## Design Approach
-**Utility-Focused Internal Application** - This is an admin tool prioritizing efficiency, clarity, and data management. Design follows Harcourts Cooper & Co brand identity while optimizing for daily operational use.
+# Harcourts Cooper & Co - Web UI Guide
 
-## Brand Foundation
+## 0. Brand anchors
 
-### Color Palette
-**Primary Colors:**
-- Navy: 210 100% 11% (Primary brand, headers, navigation)
-- Cyan: 195 100% 47% (Interactive elements, CTAs, active states)
-- White: 0 0% 100% (Base background)
+* Feel: precise, calm, confident.
+* Layouts are simple, grid-driven, and spacious.
+* Photography is real, local, and lightly edited.
 
-**Neutrals:**
-- Grey 200: 0 0% 95% (Subtle backgrounds, disabled states)
-- Grey 400: 0 0% 80% (Borders, dividers)
-- Grey 700: 0 0% 40% (Secondary text, labels)
+## 1. Logo
 
-**Semantic Colors:**
-- Success: 142 71% 45% (Submissions confirmed, active campaigns)
-- Warning: 38 92% 50% (Expiring links, pending actions)
-- Error: 0 84% 60% (Failed submissions, validation errors)
+* Use the approved Harcourts Cooper & Co lock-up only.
+* Full-colour logo on white backgrounds.
+* White (reverse) logo on dark or photos.
+* Keep clear space equal to the “H” height on all sides.
+* Do not stretch, recolour, or edit.
+* Office or agent lock-ups must keep approved hierarchy and vertical rule spacing.
 
-### Typography
-**Typeface:** Source Sans Pro (all contexts)
-- H1 (Page Headers): Bold, 32px, Navy, tracking -0.02em
-- H2 (Section Headers): Semibold, 24px, Navy
-- H3 (Card Titles): Semibold, 18px, Navy
-- Body: Regular, 15px, Grey 700, leading 1.6
-- Labels: Semibold, 13px, Grey 700, uppercase tracking 0.05em
-- Table Headers: Semibold, 14px, Grey 700
+## 2. Colour tokens
 
-### Layout System
-**Spacing Units:** 4, 8, 12, 16, 24, 32, 48, 64 (8-point grid)
-- Page margins: 32px
-- Card padding: 24px
-- Form spacing: 16px between fields
-- Table row height: 56px
-- Section gaps: 48px
+Use Navy as the anchor. Cyan is a controlled accent. Generous white space.
 
-**Radius Values:**
-- Small (inputs, pills): 8px
-- Medium (cards, modals): 12px
-- Large (hero sections): 16px
+```css
+:root {
+  --hc-navy:   #001F3A; /* Primary */
+  --hc-cyan:   #00AEEF; /* Accent */
+  --hc-white:  #FFFFFF; /* Base */
+  --hc-g200:   #F2F2F2; /* Neutral Light */
+  --hc-g400:   #CCCCCC; /* Neutral Mid */
+  --hc-g700:   #666666; /* Neutral Dark */
+  /* UI tokens */
+  --hc-bg: var(--hc-white);
+  --hc-fg: var(--hc-navy);
+  --hc-muted: var(--hc-g700);
+  --hc-border: #E6E6E6;
+  --hc-focus: var(--hc-cyan);
+}
+```
 
-## Core Components
+Usage
 
-### Navigation & Layout
-**Top Navigation Bar:**
-- Navy background with white text
-- Height: 64px
-- Logo left-aligned with proper clearspace
-- Navigation links: white text, cyan underline on active
-- User profile/role indicator right-aligned
+* Backgrounds: white or very light grey.
+* Text: Navy for headings, Charcoal for body.
+* Actions and links: Cyan, used sparingly.
+* Dividers and rules: light greys only.
 
-**Sidebar (if implemented):**
-- White background with grey 200 dividers
-- Width: 240px, collapsible to 64px icon-only
-- Active item: cyan accent stripe, light grey 200 background
+## 3. Typography
 
-**Page Structure:**
-- Max width: 1280px, centered
-- Content gutters: 32px
-- Breadcrumbs: grey 700 text with cyan separators
+* Typeface: Source Sans Pro for all text.
+* Headings: Bold, title case or uppercase, tight leading.
+* Subheadings: Semibold.
+* Body: Regular, sentence case. 14–16 px min.
+* Keep tracking consistent. No decorative mixes.
 
-### Data Tables
-**Design Approach:**
-- White background, clean grid lines using grey 400
-- Header row: grey 200 background, semibold labels
-- Row hover: grey 200 background
-- Row height: 56px with 16px vertical padding
-- Left-align text, right-align numbers
-- Sortable columns: small arrow indicator
-- Pagination: cyan buttons, showing "1-10 of 145"
+Note: set font family at app level. Do not override component-by-component.
 
-**Filtering:**
-- Filter bar above table with dropdown selects and search input
-- Light glassmorphism card: rgba(255,255,255,0.6), 10px blur
-- Clear/Reset filters: outline button
+## 4. Spacing, radius, and elevation
 
-### Cards
-**Standard Card:**
-- White background or light glass (rgba(255,255,255,0.6))
-- 12px radius, 1px grey 400 border
-- 24px padding
-- Shadow: 0 2px 8px rgba(0,0,0,0.04)
-- Header with title and optional actions
-- Optional divider between sections
+* Grid: 8-point scale. Spacing units 4, 8, 12, 16, 24, 32, 48.
+* Radius: 8 for inputs and pills, 12 for cards, 16–20 for modals or feature tiles.
+* Shadows: subtle only. Prefer 1–2 elevation steps.
 
-**Stat Cards (Dashboard):**
-- Navy or cyan primary color with white text
-- Large number display (32px bold)
-- Descriptor label below (14px regular)
-- Small trend indicator if applicable
+```css
+:root {
+  --hc-radius-sm: 8px;
+  --hc-radius-md: 12px;
+  --hc-radius-lg: 16px;
 
-### Forms & Inputs
-**Input Fields:**
-- White background, 1px grey 400 border
-- 8px radius, 12px padding
-- Focus: 2px cyan ring
-- Labels above: semibold, 13px, grey 700
-- Helper text below: regular, 13px, grey 700
-- Error state: red border, red helper text
+  --hc-shadow-1: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.04);
+  --hc-shadow-2: 0 4px 12px rgba(0,0,0,0.08);
+}
+```
 
-**Buttons:**
-- Primary: Navy background, white text, 8px radius
-- Secondary: Outline navy, navy text on white
-- Ghost: Transparent, navy text, hover grey 200
-- Size: 40px height, 16px horizontal padding
-- Focus: 2px cyan ring offset
+## 5. Light glassmorphism
 
-**Form Layout:**
-- Single column default
-- Two columns only on wide screens (>1024px) for related fields
-- 16px spacing between fields
-- Group related fields with subtle dividers
+Use glass for surfaces over imagery or tinted backgrounds. Keep contrast accessible.
 
-### SurveyJS Form Builder Interface
-**Creator Panel:**
-- Full-width layout with minimal chrome
-- Toolbox sidebar: white background, 240px width
-- Property panel: right-aligned, 280px width
-- Canvas: grey 200 background with white form preview
-- Maintain brand colors in preview mode
+Rules
 
-**Form Preview (Vendor Portal):**
-- Clean white card, 12px radius
-- Navy headings, grey 700 body text
-- Cyan progress bar if multi-page
-- Submit button: cyan background, white text
+* Background: semi-transparent white, subtle border, soft blur.
+* Text over glass must meet AA contrast.
+* Use sparingly for cards, nav bars, or panels. Not for long-form reading.
 
-### Modals & Overlays
-**Modal Structure:**
-- Light glassmorphism: rgba(255,255,255,0.85), 12px blur
-- 16px radius, max-width 600px
-- Header: navy text, close button top-right
-- Actions: right-aligned, primary + ghost pattern
-- Backdrop: rgba(0,31,58,0.4)
+```css
+.glass {
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.7);
+  box-shadow: var(--hc-shadow-1);
+  border-radius: var(--hc-radius-md);
+}
+.glass-dark {
+  background: rgba(0,31,58,0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: var(--hc-white);
+}
+```
 
-### Empty States
-**Design:**
-- Simple icon (grey 400, 48px)
-- Short message: semibold, 16px, grey 700
-- Action button: cyan primary
-- Centered vertically and horizontally in container
+## 6. shadcn/ui setup
 
-## Page-Specific Guidance
+* Use default shadcn/ui primitives.
+* Map tokens via Tailwind CSS variables.
+* Keep variants minimal: default, outline, ghost.
 
-### Dashboard
-- Grid of stat cards (4 columns on desktop)
-- Recent activity table below
-- Quick actions: cyan CTAs for common workflows
-- Charts (if needed): use cyan/navy color scheme
+Buttons
 
-### Campaign Management
-- Table view with campaign name, status badge, dates, owner
-- Status badges: colored pills (draft=grey, active=cyan, archived=navy)
-- Row actions: edit, archive, view vendors
-- Create campaign: prominent cyan button top-right
+* Primary: Navy background, white text. Focus ring Cyan.
+* Secondary: Outline Navy, text Navy on white.
+* Destructive: Use standard red only when required.
 
-### Vendor Management
-- Table with vendor name, email, campaign, submission status
-- "Issue Form Link" action: generates tokenized URL
-- URL display: monospace font, copy button
-- Filter by campaign via dropdown
+Inputs
 
-### Form Builder
-- Full-screen creator interface
-- Save button: always visible, sticky header
-- Version indicator subtle in corner
-- Active toggle prominent
+* White fill, 1 px light border, 8 px radius.
+* Focus ring Cyan at 2 px outside border.
 
-### Submissions View
-- Table with timestamp, campaign, vendor, form name
-- Row click: expand to show JSON preview
-- JSON preview: code block style, grey 200 background, 12px padding
-- Export button: download as CSV
+Links
 
-## Accessibility & Interactions
-- All interactive elements meet WCAG AA contrast
-- Focus indicators: 2px cyan ring
-- Keyboard navigation fully supported
-- Motion: 150-250ms transitions, respects prefers-reduced-motion
-- Loading states: navy spinner or cyan progress bar
+* Cyan text with underline on hover.
+* Use Navy links only on white backgrounds when links are dense.
 
-## Photography & Imagery
-**Not Applicable** - This is an internal admin tool focused on data management. No hero images or lifestyle photography needed. Use simple iconography where helpful (campaign icons, status indicators).
+## 7. Component rules
 
-## Critical Don'ts
-- Do not alter Harcourts logo lock-up
-- Do not use gradients excessively
-- Do not mix type sizes inconsistently
-- Do not use glassmorphism on content-heavy tables
-- Do not sacrifice readability for aesthetics
+Cards
 
-This design system prioritizes operational efficiency while maintaining Harcourts Cooper & Co's professional brand identity.
+* White or glass background. 12 px radius. 16–24 px padding.
+* Optional subtle divider between header and body.
+
+Navigation
+
+* Top bar: Navy on white, or glass over media.
+* Active item: Cyan indicator or underline, not both.
+* Keep icons secondary. Text leads.
+
+Tables
+
+* Left-aligned text. Right-align numerics.
+* Row height 48–56 px. Zebra using very light grey only.
+* Use truncation with tooltips, not wrapping within dense tables.
+
+Forms
+
+* Single column by default. Two columns only for wide screens with related fields.
+* Group with headings and helper text.
+* Clear success and error states. Use inline validation.
+
+Empty states
+
+* Simple icon, short line of copy, clear primary action.
+* No jokes or filler.
+
+Toasts and banners
+
+* One idea per message. Short, plain language.
+* Use Cyan for info, standard success green, standard warning amber, standard error red.
+
+## 8. Imagery
+
+* Authentic, naturally lit, North Shore and Rodney focus.
+* Light adjustments only. No heavy filters or over-saturation.
+* Keep faces, homes, and community as the hero.
+
+## 9. Accessibility and motion
+
+* Colour contrast meets WCAG AA. Test interactive states.
+* Focus states are visible on keyboard and touch.
+* Motion is subtle. Use 150–250 ms for entrances. Reduce motion if user prefers reduced.
+
+## 10. Do and don’t
+
+Do
+
+* Anchor with Navy. Use Cyan to guide action.
+* Keep layouts clean, aligned, and predictable.
+* Let content and photography carry the design.
+
+Don’t
+
+* Flood screens with gradients, shadows, or glass.
+* Mix random type sizes or weights.
+* Recolour or alter the logo.
+
+## 11. Example: shadcn/ui Card with light glass
+
+```tsx
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+
+export default function PropertyHighlightCard() {
+  return (
+    <Card className="glass border-0">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-[color:var(--hc-fg)] tracking-tight">
+          New listing in Mairangi Bay
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="text-[color:var(--hc-muted)]">
+        4 bed, 2 bath, double garage. Walk to the beach and village.
+      </CardContent>
+      <CardFooter className="gap-2">
+        <Button className="bg-[color:var(--hc-navy)] text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--hc-focus)]">
+          View details
+        </Button>
+        <Button variant="outline" className="border-[color:var(--hc-navy)] text-[color:var(--hc-navy)] hover:bg-[color:var(--hc-g200)]">
+          Book appraisal
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}
+```
+
+## 12. Page scaffolding
+
+* Max width 1200–1280 px. Content gutters 24–32 px.
+* Hero may use a glass nav over media. Main content on white panels.
+* Footer on Navy with white text. Links in Cyan.
+
+## 13. Quick checklist
+
+* Logo lock-up correct and clear space kept.
+* Navy leads, Cyan accents. Whites and light greys support.
+* Type is Source Sans Pro, clean and consistent.
+* Grid, spacing, and radius follow tokens.
+* Glass used lightly and accessibly.
+* Components align with shadcn/ui defaults and variants.
+* Copy is plain, warm, and service-driven.
+* Photography is genuine and local.
+
+This keeps the brand precise and simple, with a modern app finish that feels unmistakably Cooper & Co.

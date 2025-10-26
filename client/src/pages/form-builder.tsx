@@ -1,21 +1,20 @@
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { SurveyCreatorComponent, SurveyCreator } from "survey-creator-react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-
-import "survey-core/survey-core.css";
-import "survey-creator-core/survey-creator-core.css";
+import { Card } from "@/components/ui/card";
+import { FormTemplateEditor } from "@/components/form-template-editor";
+import { FormAST, ValidationError } from "@shared/template-parser";
 
 export default function FormBuilder() {
   const params = useParams();
   const formId = params.id as string;
   const [, setLocation] = useLocation();
-  const [creator, setCreator] = useState<SurveyCreator | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { toast } = useToast();
 
   const { data: form, isLoading } = useQuery({
@@ -30,42 +29,32 @@ export default function FormBuilder() {
       queryClient.invalidateQueries({ queryKey: ["/api/forms", formId] });
       toast({
         title: "Form saved",
-        description: "Your form has been saved successfully.",
+        description: "Your form template has been saved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Save failed",
+        description: "Failed to save form. Please try again.",
+        variant: "destructive",
       });
     },
   });
 
-  useEffect(() => {
-    if (form) {
-      const creatorInstance = new SurveyCreator({
-        showLogicTab: true,
-        isAutoSave: false,
+  const handleSaveTemplate = async (template: string, ast: FormAST) => {
+    try {
+      await updateMutation.mutateAsync({
+        template,
+        // ast and htmlPreview are generated server-side, don't send them
       });
-
-      // Load existing form JSON
-      creatorInstance.JSON = form.json;
-
-      // Configure save function
-      creatorInstance.saveSurveyFunc = async (saveNo: number, callback: (no: number, success: boolean) => void) => {
-        try {
-          await updateMutation.mutateAsync({
-            json: creatorInstance.JSON,
-            version: form.version + 1,
-          });
-          callback(saveNo, true);
-        } catch (error) {
-          callback(saveNo, false);
-          toast({
-            title: "Save failed",
-            description: "Failed to save form. Please try again.",
-            variant: "destructive",
-          });
-        }
-      };
-
-      setCreator(creatorInstance);
+    } catch (error) {
+      // Error is handled by mutation
     }
-  }, [form]);
+  };
+
+  const handleValidationError = (errors: ValidationError[]) => {
+    setValidationErrors(errors);
+  };
 
   if (isLoading) {
     return (
@@ -90,28 +79,51 @@ export default function FormBuilder() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 h-full flex flex-col">
       <div className="flex items-center gap-4 pb-4 border-b border-border">
-        <Button variant="ghost" onClick={() => setLocation("/forms")} className="gap-2" data-testid="button-back">
+        <Button
+          variant="ghost"
+          onClick={() => setLocation("/forms")}
+          className="gap-2"
+          data-testid="button-back"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back to Forms
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground" data-testid="text-builder-title">{form.title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground" data-testid="text-builder-title">
+            {form.title}
+          </h1>
           <p className="text-sm text-muted-foreground">
             Version {form.version} • {form.isActive ? "Active" : "Inactive"}
           </p>
         </div>
       </div>
 
-      <div className="rounded-md border border-border overflow-hidden bg-background" style={{ minHeight: "600px" }}>
-        {creator ? (
-          <SurveyCreatorComponent creator={creator} />
-        ) : (
-          <div className="flex items-center justify-center h-[600px]">
-            <p className="text-muted-foreground">Loading form builder...</p>
+      {validationErrors.length > 0 && (
+        <Card className="p-4 border-red-200 bg-red-50">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-900 mb-2">Validation Errors</h3>
+              <ul className="space-y-1">
+                {validationErrors.map((error, idx) => (
+                  <li key={idx} className="text-sm text-red-800">
+                    {error.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        )}
+        </Card>
+      )}
+
+      <div className="flex-1 flex flex-col rounded-md border border-border overflow-hidden bg-background">
+        <FormTemplateEditor
+          initialTemplate={form.template || ""}
+          onSave={handleSaveTemplate}
+          onError={handleValidationError}
+        />
       </div>
     </div>
   );

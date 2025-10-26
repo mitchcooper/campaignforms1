@@ -15,6 +15,26 @@ import { z } from "zod";
 
 type FormDialogData = InsertForm;
 
+const DEFAULT_TEMPLATE = `# New Form
+Please fill out this form
+
+## General Information
+
+### Name
+- label: "Your Name"
+- field: name
+- required: true
+- placeholder: "Enter your name"
+
+### Email
+- label: "Email Address"
+- field: email
+- type: email
+- required: true
+- placeholder: "your.email@example.com"
+`;
+
+
 interface FormDialogProps {
   open: boolean;
   onClose: () => void;
@@ -30,8 +50,7 @@ export function FormDialog({ open, onClose, form }: FormDialogProps) {
     defaultValues: {
       title: "",
       description: "",
-      json: { title: "New Form", pages: [{ elements: [] }] },
-      version: 1,
+      template: DEFAULT_TEMPLATE,
       isActive: true,
     },
   });
@@ -41,16 +60,14 @@ export function FormDialog({ open, onClose, form }: FormDialogProps) {
       formComponent.reset({
         title: form.title,
         description: form.description || "",
-        json: form.json,
-        version: form.version,
+        template: form.template || DEFAULT_TEMPLATE,
         isActive: form.isActive,
       });
     } else {
       formComponent.reset({
         title: "",
         description: "",
-        json: { title: "New Form", pages: [{ elements: [] }] },
-        version: 1,
+        template: DEFAULT_TEMPLATE,
         isActive: true,
       });
     }
@@ -68,6 +85,18 @@ export function FormDialog({ open, onClose, form }: FormDialogProps) {
       onClose();
       setLocation(`/forms/${response.id}/builder`);
     },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.error ||
+                          error?.response?.data?.details?.[0]?.message ||
+                          "Failed to create form";
+      toast({
+        title: "Error creating form",
+        description: typeof errorMessage === "string"
+          ? errorMessage
+          : JSON.stringify(errorMessage),
+        variant: "destructive",
+      });
+    },
   });
 
   const onSubmit = (data: FormDialogData) => {
@@ -80,7 +109,7 @@ export function FormDialog({ open, onClose, form }: FormDialogProps) {
         <DialogHeader>
           <DialogTitle>Create Form</DialogTitle>
           <DialogDescription>
-            Enter form details to create a new SurveyJS form template.
+            Enter form details. You'll be able to design the form template in the builder.
           </DialogDescription>
         </DialogHeader>
         <FormComponent {...formComponent}>
@@ -105,7 +134,7 @@ export function FormDialog({ open, onClose, form }: FormDialogProps) {
                 <FormItem>
                   <FormLabel>Description (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Enter form description..." {...field} data-testid="input-form-description" />
+                    <Textarea placeholder="Enter form description..." {...field} value={field.value || ""} data-testid="input-form-description" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

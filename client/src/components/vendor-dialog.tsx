@@ -43,7 +43,7 @@ export function VendorDialog({ open, onClose, vendor }: VendorDialogProps) {
         name: vendor.name,
         email: vendor.email || "",
         phone: vendor.phone || "",
-        meta: vendor.meta,
+        meta: (vendor.meta as Record<string, any>) || null,
       });
     } else {
       form.reset({
@@ -144,7 +144,7 @@ export function VendorDialog({ open, onClose, vendor }: VendorDialogProps) {
                 <FormItem>
                   <FormLabel>Email (Optional)</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="vendor@example.com" {...field} data-testid="input-vendor-email" />
+                    <Input type="email" placeholder="vendor@example.com" {...field} value={field.value || ""} data-testid="input-vendor-email" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -157,7 +157,7 @@ export function VendorDialog({ open, onClose, vendor }: VendorDialogProps) {
                 <FormItem>
                   <FormLabel>Phone (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="+64 21 123 4567" {...field} data-testid="input-vendor-phone" />
+                    <Input placeholder="+64 21 123 4567" {...field} value={field.value || ""} data-testid="input-vendor-phone" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

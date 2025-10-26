@@ -48,65 +48,52 @@ async function seed() {
       .values({
         title: "Vendor Details Form",
         description: "Collect vendor property and contact information",
-        json: {
-          title: "Vendor Details",
-          description: "Please provide your property and contact details",
-          pages: [
-            {
-              name: "page1",
-              elements: [
-                {
-                  type: "text",
-                  name: "owner_name",
-                  title: "Owner Name",
-                  isRequired: true,
-                },
-                {
-                  type: "text",
-                  name: "property_address",
-                  title: "Property Address",
-                  isRequired: true,
-                },
-                {
-                  type: "text",
-                  name: "email",
-                  title: "Email Address",
-                  inputType: "email",
-                  isRequired: true,
-                  validators: [
-                    {
-                      type: "email",
-                    },
-                  ],
-                },
-                {
-                  type: "text",
-                  name: "phone",
-                  title: "Phone Number",
-                  inputType: "tel",
-                },
-                {
-                  type: "dropdown",
-                  name: "property_type",
-                  title: "Property Type",
-                  choices: [
-                    "Residential House",
-                    "Apartment",
-                    "Townhouse",
-                    "Commercial",
-                    "Land",
-                  ],
-                },
-                {
-                  type: "comment",
-                  name: "additional_notes",
-                  title: "Additional Notes",
-                  rows: 4,
-                },
-              ],
-            },
-          ],
-        },
+        template: `# Vendor Details
+Please provide your property and contact details
+
+## Contact Information
+
+### Owner Name
+- label: "Owner Name"
+- field: owner_name
+- required: true
+- chip: vendor.name
+- placeholder: "Enter your full name"
+
+### Email Address
+- label: "Email Address"
+- field: email
+- type: email
+- required: true
+- chip: vendor.email
+- placeholder: "your.email@example.com"
+
+### Phone Number
+- label: "Phone Number"
+- field: phone
+- chip: vendor.phone
+- placeholder: "+64 21 123 4567"
+
+## Property Details
+
+### Property Address
+- label: "Property Address"
+- field: property_address
+- type: textarea
+- required: true
+- chip: listing.displayAddress
+
+### Property Type
+- label: "Property Type"
+- field: property_type
+- type: select
+- options: Residential House, Apartment, Townhouse, Commercial, Land
+
+### Additional Notes
+- label: "Additional Notes"
+- field: additional_notes
+- type: textarea
+- placeholder: "Any additional information you'd like to share..."`,
         version: 1,
         isActive: true,
       })

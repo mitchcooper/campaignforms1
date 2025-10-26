@@ -35,9 +35,10 @@ interface DataTableProps<T> {
   actions?: Action<T>[];
   emptyMessage?: string;
   className?: string;
+  onRowClick?: (row: T) => void;
 }
 
-export function DataTable<T extends { id: string }>({ columns, data, actions, emptyMessage = "No data available", className }: DataTableProps<T>) {
+export function DataTable<T extends { id: string }>({ columns, data, actions, emptyMessage = "No data available", className, onRowClick }: DataTableProps<T>) {
   return (
     <div className={className}>
       <div className="rounded-md border border-border overflow-hidden">
@@ -68,7 +69,12 @@ export function DataTable<T extends { id: string }>({ columns, data, actions, em
               </TableRow>
             ) : (
               data.map((row) => (
-                <TableRow key={row.id} className="hover:bg-muted/30" data-testid={`row-${row.id}`}>
+                <TableRow 
+                  key={row.id} 
+                  className={`hover:bg-muted/30 ${onRowClick ? 'cursor-pointer' : ''}`} 
+                  data-testid={`row-${row.id}`}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                >
                   {columns.map((column, index) => (
                     <TableCell
                       key={index}
