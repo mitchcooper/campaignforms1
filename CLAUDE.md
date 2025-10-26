@@ -135,6 +135,11 @@ All API routes follow REST conventions:
 - `POST /api/campaigns/:id/link-listing` - Link Cooper API listing
 - `POST /api/campaigns/:id/send-form` - Send form to campaign vendors
 
+**Cooper API Proxy Endpoints:**
+- `GET /api/cooper/listings/search` - Search properties with filtering
+- `GET /api/cooper/listings/:id` - Get property details
+- `GET /api/cooper/branches` - Get Cooper & Co branches
+
 See `server/routes.ts` for complete endpoint list.
 
 ### Cooper & Co API Integration
@@ -143,19 +148,87 @@ The `server/cooper-api.ts` module handles integration with `api.cooperandco.co.n
 
 **Authentication:** OAuth 2.0 password grant at `https://auth.cooperandco.co.nz/connect/token`
 
-**Key endpoints:**
-- Search listings by address or ID
-- Get property details with full listing data
-- Fetch related data (photos, open homes, tours)
+**Key Features:**
+- Automatic token management with expiration tracking
+- Request deduplication to prevent duplicate API calls
+- Retry logic with exponential backoff
+- Circuit breaker pattern for API failures
+- Intelligent caching with TTL
 
-Configure credentials:
-- `COOPER_USERNAME` - API username
-- `COOPER_PASSWORD` - API password
+**API Endpoints:**
+- `GET /api/cooper/listings/search` - Search properties with filtering and pagination
+- `GET /api/cooper/listings/:id` - Get detailed property information
+- `GET /api/cooper/branches` - Get list of Cooper & Co branches/offices
 
-The API is used when:
-1. Linking existing listings to campaigns
-2. Fetching property details for campaign listings
-3. Auto-refreshing listing data
+**Environment Variables:**
+- `COOPER_API_USERNAME` - API username
+- `COOPER_API_PASSWORD` - API password
+- `COOPER_API_URL` - API base URL (default: https://api.cooperandco.co.nz)
+- `COOPER_AUTH_URL` - Auth URL (default: https://auth.cooperandco.co.nz/connect/token)
+
+**Query Parameters for Search:**
+- `count` (1-100, default: 100)
+- `expand` - Comma-separated: users,branch,listingPhotos,listingOpenHomes
+- `listingStatuses` - Array: available, underOffer, sold
+- `listingTypes` - Array: residentialSale, ruralSale
+- `listingBranchId` - Office/branch ID filter
+- `searchText` - Text search across property fields
+- `soldDateFrom` - ISO date for sold properties (default: 2020-09-30T11:00:00.000Z)
+- `cursor` - Pagination cursor
+
+**Response Structure:**
+The API client transforms Cooper API responses to a standardized format:
+```typescript
+interface PropertySearchResponse {
+  items: Property[];
+  count: number;
+  nextCursor?: string;
+  hasMore: boolean;
+}
+```
+
+**Usage in the App:**
+1. **Campaign Management** - Link Cooper listings to campaigns via `CooperListingDialog`
+2. **Property Search** - Search and filter properties by address, status, office
+3. **Data Refresh** - Refresh listing data to get latest property information
+4. **Form Auto-fill** - Use listing data as chips in form templates
+
+**Error Handling:**
+- Automatic token refresh on 401 errors
+- Exponential backoff retry (3 attempts)
+- Request deduplication prevents duplicate calls
+- Circuit breaker opens after 5 consecutive failures
+
+**Implementation Details:**
+
+The `CooperAPIClient` class provides a robust wrapper around the Cooper API:
+
+```typescript
+// Token management with automatic refresh
+class TokenManager {
+  async getValidToken(): Promise<string>
+  private isTokenExpired(): boolean
+  private async authenticate(): Promise<AuthToken>
+}
+
+// Request deduplication to prevent duplicate calls
+class RequestDeduplicator<T> {
+  async deduplicate(key: string, requestFn: () => Promise<T>): Promise<T>
+}
+
+// Retry logic with exponential backoff
+class RetryableAPIClient {
+  async withRetry<T>(operation: () => Promise<T>, maxRetries?: number): Promise<T>
+}
+```
+
+**Frontend Integration:**
+
+The frontend accesses Cooper API through proxy endpoints:
+- `CooperListingDialog` component for property search and selection
+- Real-time search with debouncing (500ms)
+- Filtering by status (available, underOffer, sold) and office
+- Property preview with photos, pricing, and agent information
 
 ## Frontend Routing
 
@@ -243,8 +316,10 @@ Required:
 - `PORT` - Port to serve on (default 5000)
 
 Optional:
-- `COOPER_USERNAME` - Cooper API credentials
-- `COOPER_PASSWORD` - Cooper API credentials
+- `COOPER_API_USERNAME` - Cooper API username
+- `COOPER_API_PASSWORD` - Cooper API password
+- `COOPER_API_URL` - Cooper API base URL (default: https://api.cooperandco.co.nz)
+- `COOPER_AUTH_URL` - Cooper auth URL (default: https://auth.cooperandco.co.nz/connect/token)
 - `OPENAI_API_KEY` - OpenAI API key for AI Form Wizard feature
 
 ## Form Template System
